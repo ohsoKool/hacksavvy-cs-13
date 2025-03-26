@@ -16,7 +16,7 @@ const Layout = () => {
             <Route path="/" element={<PublicLayout />}>
               <Route index element={<HomePage />} />
             </Route>
-            <Route path="/space" element={<AppLayout />}></Route>
+            <Route path="/community" element={<AppLayout />}></Route>
             <Route path="*" element={<NotfoundPage />} />
           </Routes>
           <Toaster />

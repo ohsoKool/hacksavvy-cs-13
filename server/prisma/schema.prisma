@@ -23,15 +23,15 @@ model User {
   updatedAt DateTime @updatedAt
   image     String?  @default("https://i.pinimg.com/564x/9b/b0/66/9bb066864b0d225c324551ee2c83125d.jpg")
 
-  ownerOf  Group[]
-  memberof GroupUser[]
-  posts    Post[]      @relation(name: "ownership")
-  comments Comment[]
-  bounties Bounty[]
+  ownerOf     Group[]
+  memberof    GroupUser[]
+  posts       Post[]      @relation(name: "ownership")
+  solvedPosts Post[]      @relation(name: "userWhoSolved")
+  comments    Comment[]
+  bounties    Bounty[]
 
-  @@index([name])
-  @@index([address])
   @@map("users")
+  Like Like[]
 }
 
 model Group {
@@ -51,10 +51,6 @@ model Group {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([groupName])
-  @@index([ownerId])
-  @@index([isPrivate])
-  @@index([isCrypto])
   @@map("groups")
 }
 
@@ -73,38 +69,63 @@ model GroupUser {
 }
 
 model Post {
-  id              String  @id @default(cuid())
+  id              String   @id @default(cuid())
   postImage       String?
   postTitle       String
   postDescription String
   ownerId         String
-  onwner          User    @relation(fields: [ownerId], references: [id], name: "ownership")
+  onwner          User     @relation(fields: [ownerId], references: [id], name: "ownership")
   groupId         String
-  group           Group   @relation(fields: [groupId], references: [id])
+  group           Group    @relation(fields: [groupId], references: [id])
 
-  comment Comment[]
+  whoSolvedId     String?
+  whoSolved       User?    @relation(fields: [whoSolvedId], references: [id], name: "userWhoSolved")
+  isSolved        Boolean  @default(false)
 
-  bountyId String?
-  bounty   Bounty?
+  comment         Comment[]
+  likes          Like[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  bountyId       String?
+  bounty         Bounty?
 
-  @@index([postTitle])
-  @@index([ownerId])
-  @@index([groupId])
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
   @@map("posts")
 }
 
 model Comment {
-  id String @id @default(cuid())
+  id              String   @id @default(cuid())
+  content         String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  ownerId         String
+  owner           User     @relation(fields: [ownerId], references: [id])
+  postId          String
+  post            Post     @relation(fields: [postId], references: [id])
 
-  ownerId String
-  owner   User   @relation(fields: [ownerId], references: [id])
-  postId  String
-  post    Post   @relation(fields: [postId], references: [id])
+  parentCommentId String? 
+  parentComment   Comment?  @relation("CommentToParent", fields: [parentCommentId], references: [id])
+  childComments   Comment[] @relation("CommentToParent")
 
-  @@map("comments")
+  likes          Like[]
+}
+model Like {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+
+  postId    String?
+  post      Post?    @relation(fields: [postId], references: [id])
+
+  commentId String?
+  comment   Comment? @relation(fields: [commentId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, postId])
+  @@unique([userId, commentId])
+  @@map("likes")
 }
 
 enum BountyType {
